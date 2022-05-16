@@ -3,14 +3,17 @@ import sys
 class ExtensionAudio:
     @staticmethod
     def getLengthHeader(name):
-        data = {'wav':44}
+        data = {'wav':45}
         try:
             return data[name]
         except KeyError as e:
             raise "NonExtension"
 
 
-class SteganophyLSB:
+class SteganophyLSB():
+    
+    padding=  '\xff\xfe\xfd\xfc'
+
     @staticmethod
     def encrypt(secret : str, inFile, outFile):
         inStream = open(inFile,'rb').read()
@@ -23,31 +26,51 @@ class SteganophyLSB:
         outStream = open(outFile,'wb')
         outStream.write(inStream[:lenHeader])
 
-        block4lenSecret = inStream[lenHeader: lenHeader + len(secret)]
+
+         
+        lenSecret = len(secret) # lay do dai cua secret
+        
+        secret = f"{lenSecret}{SteganophyLSB.padding}{secret}"
 
         block4Secret = inStream[lenHeader:lenHeader + len(secret) * 8]
-
+        outStream.write(block4Secret)
         for element in  secret:
-            for byte, bit in zip(block, '{0:08b}'.format(ord(element))):
+            for byte, bit in zip(block4Secret, '{0:08b}'.format(ord(element))):
                 bit = int(bit)
                 """
                     Neu 'bit = 1' thi se 'bitwise or' neu 'bit = 0' thi se thuc hien toan tu 'bitwise and'
                 """
-                new_byte = byte|bit if bit == 1 else byte&bit 
-                outStream.write(chr(new_byte).encode()) 
+                new_byte =  byte|bit if bit == 1 else byte&bit 
+                outStream.write(chr(new_byte).encode())  
 
         outStream.write(inStream[lenHeader+len(secret)*8:])
 
     @staticmethod
-    def decrypt():
-        lengthHeader = ExtensionAudio.getLengthHeader('wav')
-        block = open('audio/outFile.wav','rb').read()[lengthHeader:lengthHeader+5*8]
+    def detectLengthSecret(inStream):
+        p = SteganophyLSB.block2str(inStream[:(len('%s'%(len(inStream)//8)) + len(SteganophyLSB.padding)) * 8])
+        print(p)
+        return p.split(SteganophyLSB.padding)[0]
 
-        plain = ""
-        for step in range(0, len(block)//8):
-            character = []
-            for bit in block[step * 8 : (step+1) * 8]:
-                character.append('%s'%(bit&1))
-            plain += chr(int(''.join(character),2))
-        return plain
-   
+    @staticmethod
+    def block2str(block):
+        return ''.join([chr(int(''.join(['%s'%(bit&1) for bit in block[step * 8 : (step+1) * 8]]),2)) for step in range(0, len(block)//8) ])
+
+    @staticmethod
+    def decrypt(inFile):
+        lengthHeader = ExtensionAudio.getLengthHeader('wav')
+        inStream = open(inFile,'rb').read()[lengthHeader:]
+        lengthSecret = SteganophyLSB.detectLengthSecret(inStream)
+
+        a = len(lengthSecret)+ len(SteganophyLSB.padding)
+
+        block = inStream[a*8:(int(lengthSecret)+a)*8]
+        return SteganophyLSB.block2str(block)
+        
+
+        
+
+SteganophyLSB.encrypt('trung','audio/audio.wav','audio/outFile.wav')
+
+a = SteganophyLSB.decrypt('audio/outFile.wav')
+
+print('decrypt: ',a)
