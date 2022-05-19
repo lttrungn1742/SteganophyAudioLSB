@@ -28,16 +28,15 @@ jobs:
 
     - name: Testing encrypt
       run: |
-        enc=`python testcase/test_encrypt.py`
-        
-    - name: Testing decrypt
-      run: dec=`python testcase/test_decrypt.py`
+        python testcase/test_encrypt.py
+        python testcase/test_decrypt.py
+      id: run_tests
     - name: Slack Notification
       uses: rtCamp/action-slack-notify@v2
       env:
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         SLACK_COLOR: ${{ job.status }}
-        SLACK_MESSAGE: "encrypt testing: $enc. decrypt testing $dec"
+        SLACK_MESSAGE: ${{join(steps.run_tests.outputs.*, '\n')}}
         SLACK_TITLE: notify
         SLACK_USERNAME: slackbot
         SLACK_MSG_AUTHOR: bot
