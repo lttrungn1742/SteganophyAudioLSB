@@ -1,7 +1,7 @@
 |Positions|Sample Value|Description|
 |-------|------|-------------------------------|
 |1 - 4	|“RIFF”|	Marks the file as a riff file. Characters are each 1 byte long.|
-|5 - 8	|File size (integer)	|Size of the overall file - 8 bytes, in bytes (32-bit integer). Typically, you’d fill this in after creation.|
+|5 - 8	|File size (integer)| Size of the overall file - 8 bytes, in bytes (32-bit integer). Typically, you’d fill this in after creation.|
 |9 -12	|“WAVE”|	File Type Header. For our purposes, it always equals “WAVE”.|
 |13-16	|“fmt "	|Format chunk marker. Includes trailing null|
 |17-20	|16	|Length of format data as listed above|
@@ -14,4 +14,5 @@
 |37-40	|“data”|	“data” chunk header. Marks the beginning of the data section.|
 |41-44	|File size (data)|	Size of the data section.|
 
+[docs header wav](https://docs.fileformat.com/audio/wav/)
 

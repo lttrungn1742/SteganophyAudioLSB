@@ -1,67 +1,60 @@
-import wave, argparse
+import numpy as np
+import argparse
 
-class Steganophy:
-    characters_padding = "#%&~en@"
-    bytes_padding = b"#$end$#"
-    def __init__(self, audioIn, audioOut=None, plaintext=None, file=None) -> None:
-        self.audio = audioIn
-        self.plaintext = plaintext
-        self.audioOut = audioOut
-        self.file = file
+class ExtensionAudio:
+    @staticmethod
+    def getLengthHeader(name):
+        data = {'wav':44}
+        try:
+            return data[name]
+        except KeyError as e:
+            raise "NonExtension"
 
-    def encrytMessage(self):
-        audio = wave.open(self.audio,mode="rb")
-        frame_bytes = bytearray(list(audio.readframes(audio.getnframes())))
-        lenght_padding = (len(frame_bytes)-(len(self.plaintext)*8*8))//8 - len(self.characters_padding)
-        if lenght_padding  < 0:
-            return False, "Plaintext is really long"
-  
-        bits = list(map(int, ''.join(["{0:08b}".format(ord(i)) for i in (self.plaintext + self.characters_padding)]))) 
-        for i, bit in enumerate(bits):
-            frame_bytes[i] = (frame_bytes[i] & 254) | bit
-        path_outfile = self.audioOut
-        outfile = wave.open(path_outfile,'wb')
-        outfile.setparams(audio.getparams())
-        outfile.writeframes(bytes(frame_bytes))
-        outfile.close()
-        audio.close()
-        
-        return True, path_outfile
 
-    def decrytMessage(self):
-        audio = wave.open(self.audio, mode='rb')
-        frame_bytes = bytearray(list(audio.readframes(audio.getnframes())))
-        extracted = [frame_bytes[i] & 1 for i in range(len(frame_bytes))]
-        string = "".join(chr(int("".join(map(str,extracted[i:i+8])),2)) for i in range(0,len(extracted),8))
-        return string.split(self.characters_padding)[0]
+int2bytes = lambda array: np.array(array, dtype='<u1').tobytes()
+arrayBytes = lambda block, secret: [byte|1 if int(bit) == 1 else byte&254  for element in secret for byte, bit in zip(block, '{0:08b}'.format(ord(element))) ]
 
-    def encrytFile(self):
-        audio = wave.open(self.audio,mode="rb")
-        frame_bytes = bytearray(list(audio.readframes(audio.getnframes())))
-        file = open(self.file,mode='rb').read()
-        lenght_padding = (len(frame_bytes)-(len(file)*8*8))//8 - len(self.bytes_padding)
-        if lenght_padding  < 0:
-            return False, "File is really larger"
-  
-        bits = list(map(int, ''.join(["{0:08b}".format(i) for i in (file + self.bytes_padding)]))) 
-        for i, bit in enumerate(bits):
-            frame_bytes[i] = (frame_bytes[i] & 254) | bit
-        path_outfile = self.audioOut
-        outfile = wave.open(path_outfile,'wb')
-        outfile.setparams(audio.getparams())
-        outfile.writeframes(bytes(frame_bytes))
-        outfile.close()
-        audio.close()
-        
-        return True, path_outfile
+lenbinary4lenSecret = 32
 
-    def decrytMessage(self):
-        audio = wave.open(self.audio, mode='rb')
-        frame_bytes = bytearray(list(audio.readframes(audio.getnframes())))
-        extracted = [frame_bytes[i] & 1 for i in range(len(frame_bytes))]
-        string = "".join(chr(int("".join(map(str,extracted[i:i+8])),2)) for i in range(0,len(extracted),8))
-        return string.split(self.characters_padding)[0]
+def encrypt(inFile, outFile, secret):
+    try:
+        lenHeader = ExtensionAudio.getLengthHeader(inFile.split('.')[-1])
+    except:
+        exit("Non Extension")
 
+    file = open(inFile,'rb').read()
+    out = open(outFile,'wb')
+    out.write(file[:lenHeader])
+
+    block4len = file[lenHeader:lenHeader + lenbinary4lenSecret]
+    lenSecret = "{0:032b}".format(len(secret))
+    
+    arrBytes = [byte|1 if int(bit) == 1 else byte&254 for byte,bit in zip(block4len, lenSecret)]
+
+    out.write(int2bytes(arrBytes))
+
+    block4secret = file[lenHeader + lenbinary4lenSecret:lenHeader + len(secret) * 8 + lenbinary4lenSecret]
+
+    out.write(int2bytes(arrayBytes(block4secret, secret)))
+    out.write(file[lenHeader + len(secret) * 8 + lenbinary4lenSecret:])
+    out.close()
+    return "Success"
+
+def decrypt(inFile):
+    try:
+        lenHeader = ExtensionAudio.getLengthHeader(inFile.split('.')[-1])
+    except:
+        exit("Non Extension")
+
+    file = open(inFile,'rb').read()[lenHeader:]
+
+    block4len = file[:lenbinary4lenSecret]
+
+    lenSecret = int(''.join(['%s'%(byte&1) for byte in block4len]), 2)
+
+    block4secret = file[lenbinary4lenSecret:lenbinary4lenSecret + lenSecret * 8]
+
+    return ''.join([chr(int(''.join(['%s'%(byte&1) for byte in block4secret[step * 8 : (step + 1) * 8]]),2)) for step in range(0,len(block4secret)//8)])   
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
@@ -69,22 +62,28 @@ if __name__=="__main__":
                         help="audio file need to be steganography", dest="infile")
     parser.add_argument("-o","--outfile", action="store", 
                         help="out file need be exported", dest="outfile")
-    parser.add_argument("-m","--message", action="store",
-                        help="message", dest="message")    
-    parser.add_argument("-e","--encode",action="store_true", dest="encode") 
-    parser.add_argument("-d","--decode", action="store_true", dest="decode")
-    parser.add_argument("-f","--file", action="store", type=str, dest="file")
+    parser.add_argument("-s","--secret", action="store",
+                        help="secret", dest="message")    
+    parser.add_argument("-e","--encrypt",action="store_true", dest="encrypt") 
+    parser.add_argument("-d","--decrypt", action="store_true", dest="decrypt")
 
-    argv = parser.parse_args()      
-    if argv.file != None and argv.message != None:
-        exit("Message or file")
-    if argv.encode:
-        if argv.message != None:
-            isSuccess, message =  Steganophy(argv.infile, argv.outfile, argv.message).encrytMessage()
-            print(f"Success, path file: {message}" if isSuccess else message )
+    args = parser.parse_args()
+
+    if args.encrypt:
+        message, infile, outfile = args.message or None, args.infile or None, args.outfile or None
+        if message == None:
+            exit("Khong co message")
+        elif infile == None:
+            exit("Khong co file audio")
+        elif outfile == None:
+            exit("Khong co file output de ghi")        
         else:
-            isSuccess, message =  Steganophy(argv.infile, argv.outfile, argv.file)
-            print(f"Success, path file: {message}" if isSuccess else message )    
-    elif argv.decode:
-        message =  Steganophy(argv.infile).decrytMessage()
-        print(f"message has been decrypted: {message}" )
+            message = encrypt(infile,outfile,message)
+            exit(message)
+    elif args.decrypt:
+        infile = args.infile or None
+        if infile == None:
+            exit("Khong co infile") 
+        else:
+            message = decrypt(infile)  
+            exit("Secret : %s"%message)
