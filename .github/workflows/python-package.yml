@@ -35,7 +35,7 @@ jobs:
       env:
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         SLACK_COLOR: ${{ job.status }}
-        SLACK_MESSAGE: ${{ steps.run_tests.outputs }}
+        SLACK_MESSAGE: ${{ steps.run_tests.outputs.var }}
         SLACK_TITLE: notify
         SLACK_USERNAME: slackbot
         SLACK_MSG_AUTHOR: bot
