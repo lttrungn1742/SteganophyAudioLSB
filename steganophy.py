@@ -58,32 +58,29 @@ def decrypt(inFile):
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-i","--infile", action="store",
-                        help="audio file need to be steganography", dest="infile")
-    parser.add_argument("-o","--outfile", action="store", 
-                        help="out file need be exported", dest="outfile")
-    parser.add_argument("-s","--secret", action="store",
-                        help="secret", dest="message")    
+    parser.add_argument("-i","--infile", action="store", help="audio file need to be stegano", dest="infile")
+    parser.add_argument("-o","--outfile", action="store", help="out file to exported", dest="outfile")
+    parser.add_argument("-s","--secret", action="store", help="secret", dest="secret")    
     parser.add_argument("-e","--encrypt",action="store_true", dest="encrypt") 
     parser.add_argument("-d","--decrypt", action="store_true", dest="decrypt")
 
     args = parser.parse_args()
 
     if args.encrypt:
-        message, infile, outfile = args.message or None, args.infile or None, args.outfile or None
-        if message == None:
-            exit("Khong co message")
+        secret, infile, outfile = args.secret or None, args.infile or None, args.outfile or None
+        if secret == None:
+            exit("No secret")
         elif infile == None:
-            exit("Khong co file audio")
+            exit("No file input")
         elif outfile == None:
-            exit("Khong co file output de ghi")        
+            exit("No file output")        
         else:
-            message = encrypt(infile,outfile,message)
+            message = encrypt(infile,outfile,secret)
             exit(message)
     elif args.decrypt:
         infile = args.infile or None
         if infile == None:
-            exit("Khong co infile") 
+            exit("No file input") 
         else:
             message = decrypt(infile)  
             exit("Secret : %s"%message)
