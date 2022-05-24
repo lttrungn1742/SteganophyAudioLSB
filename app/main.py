@@ -5,7 +5,7 @@ import stegano
 app = Flask(__name__)
 
 @app.route('/static/<path:path>')
-def send_report(path):
+def pass_resource(path):
     return send_from_directory('static', path)
 
 @app.route('/')
