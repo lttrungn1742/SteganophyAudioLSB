@@ -21,7 +21,7 @@ def encrypt(inFile, outFile, secret):
         lenHeader = ExtensionAudio.getLengthHeader(inFile.split('.')[-1])
     except:
         exit("Can not detect extension of file input")
-
+    
     file = open(inFile,'rb').read()
     _lenSecret, _lenFile = len(secret) * 8, len(file) - lenHeader - lenbinary4lenSecret//8
 
@@ -29,6 +29,7 @@ def encrypt(inFile, outFile, secret):
         exit("The size of file input is not enough to contain secret")
 
     out = open(outFile,'wb')
+
     out.write(file[:lenHeader])
 
     block4len = file[lenHeader:lenHeader + lenbinary4lenSecret]
@@ -88,4 +89,4 @@ if __name__=="__main__":
             exit("No file input") 
         else:
             message = decrypt(infile)  
-            exit("Secret : %s"%message)
+            exit("Secret found : %s"%message)

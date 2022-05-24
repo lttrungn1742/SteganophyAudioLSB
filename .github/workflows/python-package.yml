@@ -1,7 +1,4 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-
-name: Python package
+name: Steganophy LSB Audio Tool
 
 on:
   push:
@@ -11,12 +8,11 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.9"]
 
     steps:
     - uses: actions/checkout@v3
@@ -26,9 +22,20 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Testing
+    - name: Testing encrypt
       run: |
-        ls -alhR
+          python testcase/test_encrypt.py
+          python testcase/test_decrypt.py
+      id: run_tests
+    - name: Slack Notification
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        SLACK_COLOR: ${{ job.status }}
+        SLACK_MESSAGE: ${{ steps.run_tests.outputs.var }}
+        SLACK_TITLE: notify
+        SLACK_USERNAME: slackbot
+        SLACK_MSG_AUTHOR: bot
