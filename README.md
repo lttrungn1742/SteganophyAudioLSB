@@ -1,3 +1,4 @@
+## Menu
 ```
 usage: steganophy.py [-h] [-i INFILE] [-o OUTFILE] [-s SECRET] [-e] [-d]
 
@@ -12,12 +13,12 @@ optional arguments:
   -e, --encrypt
   -d, --decrypt
 ```
-
+## Encrypt
 ```
 $python3 steganophy.py -e -i audio/audio.wav -o audio/out.wav -s "Le Thanh Trung Nhom 7 - LSB"
 Success
 ```
-
+## Decrypt
 ```
 $python3 steganophy.py -d -i audio/out.wav 
 Secret : Le Thanh Trung Nhom 7 - LSB
