@@ -20,18 +20,20 @@ def encrypt():
     message = request.form['message'] or None
 
     if file == None:
-        return render_template('index.html', result_encrypt="Miss file")
+        return render_template('index.html', result_decrypt=None,result_encrypt="Miss file")
     elif message == None:
-        return render_template('index.html', result_encrypt='Miss message')
+        return render_template('index.html', result_decrypt=None,result_encrypt='Miss message')
 
 
     file_in_dir = f"./static/in/{os.urandom(10).hex()}{file.filename}"
     file.save(file_in_dir)
-    outfile = "./static/out/%s.wav"%(os.urandom(10).hex())
+    outfile = "./static/out/%s"%(file.filename)
 
     result = stegano.encrypt(file_in_dir,outfile,message)
     if result == "Success":
-        return render_template('index.html', result_encrypt=result, fileDownload=outfile)
+        return render_template('index.html', result_decrypt=None,result_encrypt=result, fileDownload=outfile)
+
+    return render_template('index.html', result_decrypt=None,result_encrypt=result)
 
 @app.route('/decrypt', methods=['POST', 'GET'])
 def decrypt():
@@ -50,4 +52,4 @@ def decrypt():
     return render_template('index.html', result_decrypt=result)
 
 if __name__=="__main__":
-    app.run('0.0.0.0',80, True)
+    app.run('0.0.0.0',8080, True)
