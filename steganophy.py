@@ -4,7 +4,7 @@ import argparse
 class ExtensionAudio:
     @staticmethod
     def getLengthHeader(name):
-        data = {'wav':44}
+        data = {'wav' : 44 } 
         try:
             return data[name]
         except KeyError as e:
